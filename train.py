@@ -47,7 +47,7 @@ parser.add_argument('--weight_decay', default=5e-4, type=float,
                     help='Weight decay for SGD')
 parser.add_argument('--gamma', default=0.1, type=float,
                     help='Gamma update for SGD')
-parser.add_argument('--visdom', default=False, type=str2bool,
+parser.add_argument('--visdom', default=True, type=str2bool,
                     help='Use visdom for loss visualization')
 parser.add_argument('--save_folder', default='weights/',
                     help='Directory for saving checkpoint models')
@@ -139,8 +139,8 @@ def train():
     if args.visdom:
         vis_title = 'SSD.PyTorch on ' + dataset.name
         vis_legend = ['Loc Loss', 'Conf Loss', 'Total Loss']
-        iter_plot = create_vis_plot('Iteration', 'Loss', vis_title, vis_legend)
-        epoch_plot = create_vis_plot('Epoch', 'Loss', vis_title, vis_legend)
+        iter_plot = create_vis_plot('Iteration', 'Loss', vis_title, vis_legend, viz)
+        epoch_plot = create_vis_plot('Epoch', 'Loss', vis_title, vis_legend, viz)
 
     data_loader = data.DataLoader(dataset, args.batch_size,
                                   num_workers=args.num_workers,
@@ -193,7 +193,7 @@ def train():
 
         if args.visdom:
             update_vis_plot(iteration, loss_l.data[0], loss_c.data[0],
-                            iter_plot, epoch_plot, 'append')
+                            iter_plot, epoch_plot, 'append', viz)
 
         if iteration != 0 and iteration % 5000 == 0:
             print('Saving state, iter:', iteration)
@@ -224,7 +224,7 @@ def weights_init(m):
         m.bias.data.zero_()
 
 
-def create_vis_plot(_xlabel, _ylabel, _title, _legend):
+def create_vis_plot(_xlabel, _ylabel, _title, _legend, viz):
     return viz.line(
         X=torch.zeros((1,)).cpu(),
         Y=torch.zeros((1, 3)).cpu(),
@@ -237,8 +237,7 @@ def create_vis_plot(_xlabel, _ylabel, _title, _legend):
     )
 
 
-def update_vis_plot(iteration, loc, conf, window1, window2, update_type,
-                    epoch_size=1):
+def update_vis_plot(iteration, loc, conf, window1, window2, update_type, viz, epoch_size=1):
     viz.line(
         X=torch.ones((1, 3)).cpu() * iteration,
         Y=torch.Tensor([loc, conf, loc + conf]).unsqueeze(0).cpu() / epoch_size,
